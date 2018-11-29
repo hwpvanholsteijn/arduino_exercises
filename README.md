@@ -1,6 +1,6 @@
-# Project:
+# Project: Arduino exercises Technical Skills
 
-My school projectfiles for the Arduino Revision 3 with Muti-function shield.
+These are the project files for the Arduino Uno Revision 3. The board does need to include a multi-function shield.
 ---
 ## Libaries
 
