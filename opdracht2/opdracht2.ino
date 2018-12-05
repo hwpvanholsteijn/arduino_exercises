@@ -5,7 +5,9 @@
 #include <MultiFuncShield.h>
 
 
-char HEXDIGITS[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'F'};
+int highScore = 0;
+
+char HEXDIGITS[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E','F'};
 
 const int BUTTON = A1;
 bool buttonState;
@@ -58,6 +60,7 @@ void loop() {
       displayError();
       delay(2000);
       showGameScore();
+      showHighScore();
       gameReset();
       instanceNewGame();
     }
@@ -98,7 +101,11 @@ void showGameScore() {
     delay(35);
     MFS.write(i);
   }
-/*
+
+  delay(2000);
+}
+
+void showHighScore(){
   int BLINKTIME = 500;
   //blink score
   for (int i = 0; i < 4; i++) {
@@ -107,7 +114,6 @@ void showGameScore() {
     delay(BLINKTIME);
     MFS.write(score);
   }
-  delay(1500);*/
 }
 
 //Get random integer from 1 till 15.
@@ -193,6 +199,8 @@ bool randomGuessed() {
 char getHexDigit(int d) {
   return HEXDIGITS[d];
 }
+
+
 
 /*
   void setGuessingTime(){

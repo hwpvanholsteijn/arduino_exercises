@@ -1,4 +1,5 @@
 /*  20180923 Gert den Neijsel, Haagse Hogeschool
+ *  16108051 Huub van Holsteijn, Haagse Hogeschool
     Dit programma simuleert (nadat de voorwaarde in regel 84 is afgemaakt) een "licht op de trap" schakeling;
     alleen als een oneven aantal schakelaars is ingedrukt dan brandt led D4 en klinkt de pieper.
     Druk de voorwaarde in regel 84 uit in termen van S1, S2 en S3.
