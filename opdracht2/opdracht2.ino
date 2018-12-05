@@ -5,16 +5,13 @@
 #include <Wire.h>
 #include <MultiFuncShield.h>
 
+//An score struct. A group of variables in a block of memory, also known as a 'structure'.
 struct ScoreObject {
   int score;
   char initals[3];
 };
 
 int eeAddress = 0; //EEPROM address to start reading from
-
-byte value;
-/** the current address in the EEPROM (i.e. which byte we're going to write to next) **/
-int addr = 0;
 
 int highscore = 0;
 
@@ -134,6 +131,7 @@ void showGameScore() {
   delay(2000);
 }
 
+//Shows a blinking highscore on the display.
 void showHighScore() {
   int BLINKTIME = 500;
   //blink score
@@ -241,6 +239,7 @@ void runCrc() {
   Serial.print("Done!\n\n");
 }
 
+//Check if the EEPROM is not damaged or corrupted.
 unsigned long eeprom_crc(void) {
   const unsigned long crc_table[16] = {
     0x00000000, 0x1db71064, 0x3b6e20c8, 0x26d930ac,
@@ -257,27 +256,19 @@ unsigned long eeprom_crc(void) {
   return crc;
 }
 
-//Iterate the EEPROM using a for loop.
-void iterateEeprom() {
-  for (int index = 0 ; index < EEPROM.length() ; index++) {
-    //Add one to each cell in the EEPROM
-    EEPROM[ index ] += 1;
-  }
-}
-
-//Put in new highscore
+//Put in new highscore on to the EEPROM storage.
 void putNewHighscore() {
   ScoreObject customScore = {
     highscore,
-    {'H', 'W', 'P'} //Custom initalias fo the future.
+    {'H', 'W', 'P'} //Custom initalias for the future.
   };
   eeAddress += sizeof(float);
   EEPROM.put(eeAddress, customScore);
 }
 
-
+//read highscore from EEPROM
 void readHighscore() {
-  int eeAddress = sizeof(float);
+  int eeAddress = sizeof(float); // Adres of the highscore stored in the EEPROM
   ScoreObject so;
   EEPROM.get(eeAddress, so);
   Serial.print("Highscore: ");
@@ -285,37 +276,11 @@ void readHighscore() {
   highscore = so.score;
 }
 
-/*
-void updateStoredHighscore(int highscore) {
+void resetHighscore() {
   ScoreObject customScore = {
-    score,
-    {'H', 'W', 'P'}
+    0,
+    {'H', 'W', 'P'} //Custom initalias for the future.
   };
-  EEPROM.update(eeAddress, customScore);
-}*/
-
-/*
-  value = EEPROM.read(eeAddress);
-  Serial.print("highscore: ");
-  Serial.println(value, DEC);
-  int s = (int) value;
-  highscore = s;
-*/
-/*
-  void nextWriteStoreEeprom(){
-  addr = addr + 1;
-  if (addr == EEPROM.length()) {
-    addr = 0;
-  }
-  }*/
-
-/*
-  void setGuessingTime(){
-  guessingTime = passedTime();
-  }
-
-  void displayTime(){
-  MFS.write(guessingTime);
-  }
-
-*/
+  eeAddress += sizeof(float);
+  EEPROM.put(eeAddress, customScore);
+}
