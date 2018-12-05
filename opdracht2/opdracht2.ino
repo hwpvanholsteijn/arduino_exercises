@@ -1,13 +1,24 @@
 // Huub van Holsteijn, The Hague University 28 november 2018
 //References: https://www.arduino.cc/reference/en/#functions
+#include <EEPROM.h>
 #include <TimerOne.h>
 #include <Wire.h>
 #include <MultiFuncShield.h>
 
+struct ScoreObject {
+  int score;
+  char initals[3];
+};
 
-int highScore = 0;
+int eeAddress = 0; //EEPROM address to start reading from
 
-char HEXDIGITS[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E','F'};
+byte value;
+/** the current address in the EEPROM (i.e. which byte we're going to write to next) **/
+int addr = 0;
+
+int highscore = 0;
+
+char HEXDIGITS[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
 const int BUTTON = A1;
 bool buttonState;
@@ -30,8 +41,15 @@ void setup() {
   Serial.begin(9600);
   Timer1.initialize();
   MFS.initialize(&Timer1); // initialize multi-function shield library
-  //randomSeed(analogRead(A5)); //Most random number on the multi-function shield, cause pins is unused.
-  randomSeed(analogRead(A5)); // Pseudorandom
+  randomSeed(analogRead(A5)); //Most random number on the multi-function shield, cause pins is unused.
+  while (!Serial) {
+    ; // wait for serial port to connect. Needed for native USB port only
+  }
+  runCrc();
+  //putEeprom();
+  readHighscore();
+  //iterateEeprom();
+  //randomSeed(analogRead(A1)); // Pseudorandom
   /*Instances of the game*/
   MFS.write("Play");
   delay(2000);
@@ -59,11 +77,22 @@ void loop() {
     } else {
       displayError();
       delay(2000);
+      compareHighscore();
       showGameScore();
       showHighScore();
       gameReset();
+      displayBinary(buttonPushes);
       instanceNewGame();
     }
+  }
+}
+
+//compare highscore with the previous read highscore
+void compareHighscore() {
+  if (score > highscore) {
+    highscore = score;
+    putNewHighscore();
+    //updateStoredHighscore(highscore);
   }
 }
 
@@ -88,6 +117,7 @@ void gameReset() {
   displayReset();
 }
 
+
 //Display number and resets millis.
 void displayReset() {
   displayHex(randomNum);
@@ -101,18 +131,17 @@ void showGameScore() {
     delay(35);
     MFS.write(i);
   }
-
   delay(2000);
 }
 
-void showHighScore(){
+void showHighScore() {
   int BLINKTIME = 500;
   //blink score
   for (int i = 0; i < 4; i++) {
     delay(BLINKTIME);
     MFS.write("");
     delay(BLINKTIME);
-    MFS.write(score);
+    MFS.write(highscore);
   }
 }
 
@@ -200,7 +229,85 @@ char getHexDigit(int d) {
   return HEXDIGITS[d];
 }
 
+//An method to check the corrutionstatus of the EEPROM data.
+void runCrc() {
+  //Print length of data to run CRC on.
+  Serial.print("EEPROM length: ");
+  Serial.println(EEPROM.length());
 
+  //Print the result of calling eeprom_crc()
+  Serial.print("CRC32 of EEPROM data: 0x");
+  Serial.println(eeprom_crc(), HEX);
+  Serial.print("Done!\n\n");
+}
+
+unsigned long eeprom_crc(void) {
+  const unsigned long crc_table[16] = {
+    0x00000000, 0x1db71064, 0x3b6e20c8, 0x26d930ac,
+    0x76dc4190, 0x6b6b51f4, 0x4db26158, 0x5005713c,
+    0xedb88320, 0xf00f9344, 0xd6d6a3e8, 0xcb61b38c,
+    0x9b64c2b0, 0x86d3d2d4, 0xa00ae278, 0xbdbdf21c
+  };
+  unsigned long crc = ~0L;
+  for (int index = 0 ; index < EEPROM.length()  ; ++index) {
+    crc = crc_table[(crc ^ EEPROM[index]) & 0x0f] ^ (crc >> 4);
+    crc = crc_table[(crc ^ (EEPROM[index] >> 4)) & 0x0f] ^ (crc >> 4);
+    crc = ~crc;
+  }
+  return crc;
+}
+
+//Iterate the EEPROM using a for loop.
+void iterateEeprom() {
+  for (int index = 0 ; index < EEPROM.length() ; index++) {
+    //Add one to each cell in the EEPROM
+    EEPROM[ index ] += 1;
+  }
+}
+
+//Put in new highscore
+void putNewHighscore() {
+  ScoreObject customScore = {
+    highscore,
+    {'H', 'W', 'P'} //Custom initalias fo the future.
+  };
+  eeAddress += sizeof(float);
+  EEPROM.put(eeAddress, customScore);
+}
+
+
+void readHighscore() {
+  int eeAddress = sizeof(float);
+  ScoreObject so;
+  EEPROM.get(eeAddress, so);
+  Serial.print("Highscore: ");
+  Serial.println(so.score);
+  highscore = so.score;
+}
+
+/*
+void updateStoredHighscore(int highscore) {
+  ScoreObject customScore = {
+    score,
+    {'H', 'W', 'P'}
+  };
+  EEPROM.update(eeAddress, customScore);
+}*/
+
+/*
+  value = EEPROM.read(eeAddress);
+  Serial.print("highscore: ");
+  Serial.println(value, DEC);
+  int s = (int) value;
+  highscore = s;
+*/
+/*
+  void nextWriteStoreEeprom(){
+  addr = addr + 1;
+  if (addr == EEPROM.length()) {
+    addr = 0;
+  }
+  }*/
 
 /*
   void setGuessingTime(){
